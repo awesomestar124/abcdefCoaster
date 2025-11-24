@@ -25,7 +25,7 @@
             background: white;
             border-radius: 24px;
             padding: 40px 30px;
-            max-width: 400px;
+            max-width: 500px;
             width: 100%;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             text-align: center;
@@ -43,7 +43,7 @@
         }
         
         h1 {
-            font-size: 28px;
+            font-size: 32px;
             color: #1a1a1a;
             margin-bottom: 10px;
             font-weight: 700;
@@ -51,7 +51,7 @@
         
         .subtitle {
             color: #666;
-            font-size: 16px;
+            font-size: 18px;
             margin-bottom: 30px;
             line-height: 1.5;
         }
@@ -63,51 +63,106 @@
             border-radius: 12px;
             margin-bottom: 25px;
             font-weight: 600;
+            font-size: 18px;
         }
         
-        .activate-btn {
+        .upload-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 18px 40px;
-            font-size: 18px;
+            padding: 20px 40px;
+            font-size: 20px;
             font-weight: 600;
             border-radius: 12px;
             cursor: pointer;
             width: 100%;
             transition: transform 0.2s, box-shadow 0.2s;
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
         
-        .activate-btn:hover {
+        .upload-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
         }
         
-        .activate-btn:active {
+        .upload-btn:active {
             transform: translateY(0);
         }
         
-        .features {
-            margin-top: 30px;
+        .upload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .preview {
+            margin: 20px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            max-height: 300px;
+        }
+        
+        .preview img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .response {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
             text-align: left;
-            font-size: 14px;
-            color: #666;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #1a1a1a;
+            border-left: 4px solid #667eea;
         }
         
-        .feature {
-            margin: 10px 0;
-            padding-left: 25px;
-            position: relative;
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
         }
         
-        .feature:before {
-            content: "✓";
-            position: absolute;
-            left: 0;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .reset-btn {
+            background: transparent;
+            border: 2px solid #667eea;
             color: #667eea;
-            font-weight: bold;
-            font-size: 18px;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.2s;
+        }
+        
+        .reset-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .error {
+            background: #fee;
+            border-left: 4px solid #e33;
+            color: #c00;
         }
     </style>
 </head>
@@ -115,30 +170,119 @@
     <div class="container">
         <div class="coaster-icon">☕</div>
         <h1>AI Drink Coaster</h1>
-        <p class="subtitle">Your drinks are about to get judged by artificial intelligence.</p>
+        <p class="subtitle">Show me your drink and I'll roast you for it 🔥</p>
         
         <div class="personality">
             🔥 Roast Master 3000 Activated
         </div>
         
-        <button class="activate-btn" onclick="activateCoaster()">
-            Activate My Coaster
+        <input type="file" id="imageInput" accept="image/*" capture="environment">
+        
+        <button class="upload-btn" id="uploadBtn" onclick="document.getElementById('imageInput').click()">
+            <span>📸</span>
+            <span>Show Me Your Drink</span>
         </button>
         
-        <div class="features">
-            <div class="feature">Take a photo of your drink</div>
-            <div class="feature">Get roasted or hyped by AI</div>
-            <div class="feature">Share with friends</div>
-        </div>
+        <div id="preview" class="preview" style="display: none;"></div>
+        <div id="response" style="display: none;"></div>
+        <button class="reset-btn" id="resetBtn" style="display: none;" onclick="reset()">Try Another Drink</button>
     </div>
     
     <script>
-        function activateCoaster() {
-            // Pre-loaded prompt for Gemini
-            const prompt = encodeURIComponent("You are an AI Drink Coaster called 'Roast Master 3000'. Your job is to judge people's drink choices. Start by saying something funny and energetic, then ask the user to take a photo of their drink so you can roast or compliment them based on what they're drinking. Be funny, use Gen Z slang, and use emojis. Keep responses to 2-3 sentences. If they show you water, praise them. If they show you energy drinks or unhealthy stuff, roast them (but keep it lighthearted). Be creative and entertaining!");
+        const imageInput = document.getElementById('imageInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const preview = document.getElementById('preview');
+        const responseDiv = document.getElementById('response');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        imageInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
             
-            // Open Gemini with pre-loaded prompt
-            window.location.href = `https://gemini.google.com/app?q=${prompt}`;
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                preview.innerHTML = `<img src="${e.target.result}" alt="Your drink">`;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+            
+            // Analyze with AI
+            await analyzeImage(file);
+        });
+        
+        async function analyzeImage(file) {
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<span class="loading"></span><span>Roasting your choice...</span>';
+            responseDiv.style.display = 'none';
+            
+            try {
+                // Convert image to base64
+                const base64 = await fileToBase64(file);
+                const base64Data = base64.split(',')[1];
+                
+                // Call Gemini API
+                const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=AIzaSyDummy', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                {
+                                    text: "You are 'Roast Master 3000', an AI drink coaster that roasts people's drink choices. Look at this drink and roast them in 2-3 sentences. Be funny, savage but not mean. Use Gen Z slang and end with 💀 or 🔥. If it's water, praise them instead."
+                                },
+                                {
+                                    inline_data: {
+                                        mime_type: file.type,
+                                        data: base64Data
+                                    }
+                                }
+                            ]
+                        }]
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.candidates && data.candidates[0]) {
+                    const text = data.candidates[0].content.parts[0].text;
+                    showResponse(text);
+                } else {
+                    showResponse("Bruh, I can't even roast this. My AI brain is broken. 💀", true);
+                }
+                
+            } catch (error) {
+                showResponse("Error connecting to AI. But real talk, that drink choice? Questionable. 💀", true);
+            }
+            
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<span>📸</span><span>Show Me Your Drink</span>';
+        }
+        
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        function showResponse(text, isError = false) {
+            responseDiv.className = 'response' + (isError ? ' error' : '');
+            responseDiv.textContent = text;
+            responseDiv.style.display = 'block';
+            resetBtn.style.display = 'block';
+        }
+        
+        function reset() {
+            preview.style.display = 'none';
+            preview.innerHTML = '';
+            responseDiv.style.display = 'none';
+            resetBtn.style.display = 'none';
+            imageInput.value = '';
         }
     </script>
 </body>
