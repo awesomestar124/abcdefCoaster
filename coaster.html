@@ -66,7 +66,7 @@
             font-size: 18px;
         }
         
-        .upload-btn {
+        .activate-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
@@ -78,91 +78,48 @@
             width: 100%;
             transition: transform 0.2s, box-shadow 0.2s;
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
         }
         
-        .upload-btn:hover {
+        .activate-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
         }
         
-        .upload-btn:active {
+        .activate-btn:active {
             transform: translateY(0);
         }
         
-        .upload-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        
-        input[type="file"] {
-            display: none;
-        }
-        
-        .preview {
-            margin: 20px 0;
-            border-radius: 12px;
-            overflow: hidden;
-            max-height: 300px;
-        }
-        
-        .preview img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-        
-        .response {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 12px;
-            margin-top: 20px;
+        .features {
+            margin-top: 30px;
             text-align: left;
-            font-size: 16px;
-            line-height: 1.6;
-            color: #1a1a1a;
-            border-left: 4px solid #667eea;
+            font-size: 14px;
+            color: #666;
         }
         
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
+        .feature {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
         }
         
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .reset-btn {
-            background: transparent;
-            border: 2px solid #667eea;
+        .feature:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
             color: #667eea;
-            padding: 12px 30px;
-            font-size: 16px;
-            font-weight: 600;
-            border-radius: 12px;
-            cursor: pointer;
-            margin-top: 15px;
-            transition: all 0.2s;
-        }
-        
-        .reset-btn:hover {
-            background: #667eea;
-            color: white;
+            font-weight: bold;
+            font-size: 18px;
         }
 
-        .error {
-            background: #fee;
-            border-left: 4px solid #e33;
-            color: #c00;
+        .note {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 12px;
+            margin-top: 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #555;
+            text-align: left;
         }
     </style>
 </head>
@@ -176,113 +133,31 @@
             🔥 Roast Master 3000 Activated
         </div>
         
-        <input type="file" id="imageInput" accept="image/*" capture="environment">
-        
-        <button class="upload-btn" id="uploadBtn" onclick="document.getElementById('imageInput').click()">
-            <span>📸</span>
-            <span>Show Me Your Drink</span>
+        <button class="activate-btn" onclick="activateCoaster()">
+            Activate My Coaster
         </button>
         
-        <div id="preview" class="preview" style="display: none;"></div>
-        <div id="response" style="display: none;"></div>
-        <button class="reset-btn" id="resetBtn" style="display: none;" onclick="reset()">Try Another Drink</button>
+        <div class="features">
+            <div class="feature">Upload a photo of your drink</div>
+            <div class="feature">Get instantly roasted by AI</div>
+            <div class="feature">Share the burns with friends</div>
+        </div>
+
+        <div class="note">
+            💡 <strong>How it works:</strong> Clicking the button opens Claude AI with your coaster personality pre-loaded. Just upload a photo of your drink and watch the roast unfold!
+        </div>
     </div>
     
     <script>
-        const imageInput = document.getElementById('imageInput');
-        const uploadBtn = document.getElementById('uploadBtn');
-        const preview = document.getElementById('preview');
-        const responseDiv = document.getElementById('response');
-        const resetBtn = document.getElementById('resetBtn');
-        
-        imageInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+        function activateCoaster() {
+            // Pre-loaded prompt for Claude
+            const prompt = "You are 'Roast Master 3000', an AI-powered drink coaster with a savage sense of humor. Your job is to roast people's drink choices. Start by saying something funny and energetic like 'Yo, I'm your AI coaster and I'm about to judge your life choices.' Then ask them to upload a photo of their drink. Once they show you the drink, roast them in 2-3 sentences using Gen Z slang and internet humor. Be funny and savage but not genuinely mean. End with a skull emoji 💀 or fire emoji 🔥. EXCEPTION: If they're drinking water, praise them and call them a legend instead of roasting.";
             
-            // Show preview
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                preview.innerHTML = `<img src="${e.target.result}" alt="Your drink">`;
-                preview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
+            // Encode the prompt for URL
+            const encodedPrompt = encodeURIComponent(prompt);
             
-            // Analyze with AI
-            await analyzeImage(file);
-        });
-        
-        async function analyzeImage(file) {
-            uploadBtn.disabled = true;
-            uploadBtn.innerHTML = '<span class="loading"></span><span>Roasting your choice...</span>';
-            responseDiv.style.display = 'none';
-            
-            try {
-                // Convert image to base64
-                const base64 = await fileToBase64(file);
-                const base64Data = base64.split(',')[1];
-                
-                // Call Gemini API
-                const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=AIzaSyDummy', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [
-                                {
-                                    text: "You are 'Roast Master 3000', an AI drink coaster that roasts people's drink choices. Look at this drink and roast them in 2-3 sentences. Be funny, savage but not mean. Use Gen Z slang and end with 💀 or 🔥. If it's water, praise them instead."
-                                },
-                                {
-                                    inline_data: {
-                                        mime_type: file.type,
-                                        data: base64Data
-                                    }
-                                }
-                            ]
-                        }]
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.candidates && data.candidates[0]) {
-                    const text = data.candidates[0].content.parts[0].text;
-                    showResponse(text);
-                } else {
-                    showResponse("Bruh, I can't even roast this. My AI brain is broken. 💀", true);
-                }
-                
-            } catch (error) {
-                showResponse("Error connecting to AI. But real talk, that drink choice? Questionable. 💀", true);
-            }
-            
-            uploadBtn.disabled = false;
-            uploadBtn.innerHTML = '<span>📸</span><span>Show Me Your Drink</span>';
-        }
-        
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
-        
-        function showResponse(text, isError = false) {
-            responseDiv.className = 'response' + (isError ? ' error' : '');
-            responseDiv.textContent = text;
-            responseDiv.style.display = 'block';
-            resetBtn.style.display = 'block';
-        }
-        
-        function reset() {
-            preview.style.display = 'none';
-            preview.innerHTML = '';
-            responseDiv.style.display = 'none';
-            resetBtn.style.display = 'none';
-            imageInput.value = '';
+            // Open Claude with pre-loaded prompt
+            window.location.href = `https://claude.ai/new?q=${encodedPrompt}`;
         }
     </script>
 </body>
